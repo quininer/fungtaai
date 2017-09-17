@@ -1,0 +1,7 @@
+[package]
+name = "fungtaai"
+version = "0.1.0"
+authors = ["quininer <quininer@live.com>"]
+
+[dependencies]
+byteorder = { version = "*", default-features = false, features = [ "i128" ] }
