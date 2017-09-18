@@ -1,10 +1,16 @@
 use core::marker::PhantomData;
 use byteorder::{ ByteOrder, LittleEndian };
-use ::traits::{ KEY_LEN, Prf, Hash };
+use ::traits::{ KEY_LENGTH, Prf, Hash };
 
 
+/// 9.4 The Generator
+///
+/// The generator is the part that converts a fixed-size state to arbitrarily long
+/// outputs. We’ll use an AES-like block cipher for the generator; feel free to
+/// choose AES (Rijndael), Serpent, or Twofish for this function. The internal state
+/// of the generator consists of a 256-bit block cipher key and a 128-bit counter.
 pub struct Generator<P: Prf, H: Hash> {
-    key: [u8; KEY_LEN],
+    key: [u8; KEY_LENGTH],
     ctr: u128,
     _phantom: PhantomData<(P, H)>
 }
@@ -17,11 +23,10 @@ impl<P, H> Default for Generator<P, H>
     /// This is rather simple. We set the key and the counter to zero to indicate that
     /// the generator has not been seeded yet.
     fn default() -> Self {
-        // Set the key K and counter C to zero.
         // Package up the state.
         Generator {
-            key: [0; KEY_LEN],
-            ctr: 0,
+            // Set the key K and counter C to zero.
+            key: [0; KEY_LENGTH], ctr: 0,
             _phantom: PhantomData
         }
     }
@@ -38,9 +43,9 @@ impl<P, H> Generator<P, H>
     pub fn reseed(&mut self, seed: &[u8]) {
         // Compute the new key using a hash function.
         let mut hasher = H::default();
-        hasher.input(&self.key);
-        hasher.input(seed);
-        hasher.output(&mut self.key);
+        hasher.update(&self.key);
+        hasher.update(seed);
+        hasher.result(&mut self.key);
 
         // Increment the counter to make it nonzero and mark the generator as seeded.
         self.ctr += 1;
@@ -78,7 +83,7 @@ impl<P, H> Generator<P, H>
         // Compute the output.
         self.generate_blocks(r);
         // Switch to a new key to avoid later compromises of this output.
-        let mut newkey = [0; KEY_LEN];
+        let mut newkey = [0; KEY_LENGTH];
         self.generate_blocks(&mut newkey);
         self.key = newkey;
     }
