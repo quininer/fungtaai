@@ -1,6 +1,6 @@
 #![no_std]
 
-#![feature(i128_type)]
+#![feature(i128_type, iterator_for_each)]
 
 extern crate byteorder;
 
@@ -8,13 +8,19 @@ pub mod traits;
 mod generator;
 mod pool;
 
-use core::marker::PhantomData;
-use traits::{ Prf, Hash, Time };
+use traits::{ BLOCK_LENGTH, Prf, Hash, Time };
 use generator::Generator;
 use pool::Pool;
 
 
 pub const POOLS_NUM: usize = 32;
+pub const MIN_POOL_SIZE: usize = 64;
+pub const MAX_GENERATE_SIZE: usize = 1 << 20;
+
+
+pub enum Error {
+    NotSeededYet
+}
 
 /// 9.5 Accumulator
 ///
@@ -25,10 +31,11 @@ pub struct Fortuna<P: Prf, H: Hash, T: Time> {
     pool: [Pool<H>; POOLS_NUM],
     generator: Generator<P, H>,
     reseed_cnt: u32,
-    _phantom: PhantomData<T>
+    last_reseed_time: u32,
+    clock: T
 }
 
-impl<P, H, T> Default for Fortuna<P, H, T>
+impl<P, H, T> Fortuna<P, H, T>
     where P: Prf, H: Hash, T: Time
 {
     /// 9.5.4 Initialization
@@ -37,7 +44,7 @@ impl<P, H, T> Default for Fortuna<P, H, T>
     /// the generator and the accumulator, but the functions we are about to define
     /// are part of the external interface of Fortuna. Their names reflect the fact that
     /// they operate on the whole prng.
-    fn default() -> Self {
+    pub fn init(clock: T) -> Self {
         macro_rules! array {
             ( $val:expr ; x8  ) => {
                 [$val, $val, $val, $val, $val, $val, $val, $val]
@@ -66,19 +73,63 @@ impl<P, H, T> Default for Fortuna<P, H, T>
             generator: Generator::default(),
             // Set the reseed counter to zero.
             reseed_cnt: 0,
-            _phantom: PhantomData
+            last_reseed_time: 0,
+            clock: clock
         }
     }
-}
 
-impl<P, H, T> Fortuna<P, H, T>
-    where P: Prf, H: Hash, T: Time
-{
     /// 9.5.5 Getting Random Data
     ///
     /// This is not quite a simple wrapper around the generator component of the
     /// prng, because we have to handle the reseeds here.
-    pub fn random_data(&mut self, r: &mut [u8]) {
-        unimplemented!()
+    pub fn random_data(&mut self, r: &mut [u8]) -> Result<(), Error> {
+        let now = self.clock.now();
+        if self.pool[0].length >= MIN_POOL_SIZE && now > self.last_reseed_time + 100 {
+            // We need to reseed.
+            self.reseed_cnt += 1;
+            self.last_reseed_time = now;
+
+            // Got the data, now do the reseed.
+            let pools = &mut self.pool;
+            let reseed_cnt = self.reseed_cnt;
+            self.generator.reseed_with(move |hasher| {
+                // Append the hashes of all the pools we will use
+                pools.iter_mut()
+                    .enumerate()
+                    .take_while(|&(i, _)| reseed_cnt % (1 << i) == 0)
+                    .for_each(|(_, pool)| {
+                        let mut seed = [0; BLOCK_LENGTH];
+                        pool.output(&mut seed);
+                        hasher.update(&seed);
+                        pool.reset();
+                    })
+            });
+        }
+
+        if self.reseed_cnt == 0 {
+            // Generate error, prng not seeded yet
+            Err(Error::NotSeededYet)
+        } else {
+            // Reseeds (if needed) are done. Let the generator that is part of R do the work.
+            r.chunks_mut(MAX_GENERATE_SIZE)
+                .for_each(|chunk| self.generator.pseudo_random_data(chunk));
+            Ok(())
+        }
+    }
+
+    /// 9.5.6 Add an Event
+    ///
+    /// Random sources call this routine when they have another random event. Note
+    /// that the random sources are each uniquely identified by a source number.
+    /// We will not specify how to allocate the source numbers because the solution
+    /// depends on the local situation.
+    pub fn add_random_event(&mut self, s: u8, i: usize, e: &[u8]) {
+        // Check the parameters first.
+        assert!(!e.is_empty() && e.len() <= 32);
+        assert!(i <= POOLS_NUM);
+
+        // Add the data to the pool.
+        self.pool[i].input(&[s, e.len() as u8]);
+        self.pool[i].input(e);
     }
 }

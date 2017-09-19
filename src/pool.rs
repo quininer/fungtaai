@@ -8,15 +8,18 @@ pub struct Pool<H: Hash> {
 }
 
 impl<H: Hash> Pool<H> {
+    #[inline]
     pub fn input(&mut self, input: &[u8]) {
         self.hasher.update(input);
         self.length += input.len();
     }
 
+    #[inline]
     pub fn output(&mut self, output: &mut [u8]) {
         self.hasher.result(output);
     }
 
+    #[inline]
     pub fn reset(&mut self) {
         self.hasher = H::default();
     }

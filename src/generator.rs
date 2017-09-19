@@ -1,6 +1,7 @@
 use core::marker::PhantomData;
 use byteorder::{ ByteOrder, LittleEndian };
-use ::traits::{ KEY_LENGTH, Prf, Hash };
+use ::traits::{ KEY_LENGTH, BLOCK_LENGTH, Prf, Hash };
+use ::MAX_GENERATE_SIZE;
 
 
 /// 9.4 The Generator
@@ -40,11 +41,13 @@ impl<P, H> Generator<P, H>
     /// The reseed operation updates the state with an arbitrary input string. At this
     /// level we do not care what this input string contains. To ensure a thorough
     /// mixing of the input with the existing key, we use a hash function.
-    pub fn reseed(&mut self, seed: &[u8]) {
+    pub fn reseed_with<F>(&mut self, f: F)
+        where F: FnOnce(&mut H)
+    {
         // Compute the new key using a hash function.
         let mut hasher = H::default();
         hasher.update(&self.key);
-        hasher.update(seed);
+        f(&mut hasher);
         hasher.result(&mut self.key);
 
         // Increment the counter to make it nonzero and mark the generator as seeded.
@@ -58,14 +61,18 @@ impl<P, H> Generator<P, H>
     /// should not be able to call this function.
     pub fn generate_blocks(&mut self, r: &mut [u8]) {
         assert_ne!(self.ctr, 0);
-        assert_eq!(r.len() % P::BLOCK_LENGTH, 0);
 
         let prf = P::new(&self.key);
 
         // Append the necessary blocks.
-        for chunk in r.chunks_mut(P::BLOCK_LENGTH) {
-            LittleEndian::write_u128(chunk, self.ctr);
-            prf.prf(chunk);
+        for chunk in r.chunks_mut(BLOCK_LENGTH) {
+            let mut part = [0; BLOCK_LENGTH];
+            LittleEndian::write_u128(&mut part, self.ctr);
+            prf.prf(&mut part);
+
+            // TODO https://github.com/rust-lang/rust/issues/44100
+            let len = chunk.len();
+            chunk.copy_from_slice(&part[..len]);
             self.ctr += 1;
         }
     }
@@ -78,7 +85,7 @@ impl<P, H> Generator<P, H>
     pub fn pseudo_random_data(&mut self, r: &mut [u8]) {
         // Limit the output length to reduce the statistical deviation from perfectly random
         // outputs. Also ensure that the length is not negative.
-        assert!(r.len() <= 1 << 20);
+        assert!(r.len() <= MAX_GENERATE_SIZE);
 
         // Compute the output.
         self.generate_blocks(r);
