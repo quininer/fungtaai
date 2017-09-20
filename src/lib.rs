@@ -93,7 +93,7 @@ impl<P, H, T> Fortuna<P, H, T>
             // Got the data, now do the reseed.
             let pools = &mut self.pool;
             let reseed_cnt = self.reseed_cnt;
-            self.generator.reseed_with(move |hasher| {
+            self.generator.reseed_with(|hasher| {
                 // Append the hashes of all the pools we will use
                 pools.iter_mut()
                     .enumerate()

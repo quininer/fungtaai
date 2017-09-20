@@ -13,8 +13,10 @@ pub trait Prf {
 }
 
 pub trait Hash: Default {
+    // const RESULT_LENGTH: usize;
+
     fn update(&mut self, input: &[u8]);
-    fn result(&mut self, output: &mut [u8]);
+    fn result(&mut self, output: &mut [u8; KEY_LENGTH]);
 }
 
 pub trait Time {

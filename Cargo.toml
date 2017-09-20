@@ -2,11 +2,16 @@
 name = "fungtaai"
 version = "0.1.0"
 authors = ["quininer <quininer@live.com>"]
+description = "Fortuna PRNG implementation in Rust"
+repository = "https://github.com/quininer/sp800-185"
+keywords = [ "random", "PRNG", "cryptography" ]
+categories = [ "cryptography", "no-std" ]
+license = "MIT"
 
 [dependencies]
-byteorder = { version = "*", default-features = false, features = [ "i128" ] }
+byteorder = { version = "1", default-features = false, features = [ "i128" ] }
 
 [dev-dependencies]
-aesni = "*"
-sha2 = "*"
-digest = "*"
+aesni = "0.1"
+sha2 = "0.6"
+digest = "0.6"

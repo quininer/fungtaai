@@ -1,4 +1,4 @@
-use ::traits::Hash;
+use ::traits::{ KEY_LENGTH, Hash };
 
 
 #[derive(Default)]
@@ -15,7 +15,7 @@ impl<H: Hash> Pool<H> {
     }
 
     #[inline]
-    pub fn output(&mut self, output: &mut [u8]) {
+    pub fn output(&mut self, output: &mut [u8; KEY_LENGTH]) {
         self.hasher.result(output);
     }
 

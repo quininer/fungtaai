@@ -42,7 +42,7 @@ impl Hash for Sha256d {
         self.0.process(input);
     }
 
-    fn result(&mut self, output: &mut [u8]) {
+    fn result(&mut self, output: &mut [u8; KEY_LENGTH]) {
         use digest::{ Input, FixedOutput };
 
         let mut sha256d = Sha256::default();
