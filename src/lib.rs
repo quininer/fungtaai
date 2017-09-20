@@ -8,7 +8,7 @@ pub mod traits;
 mod generator;
 mod pool;
 
-use traits::{ BLOCK_LENGTH, Prf, Hash, Time };
+use traits::{ KEY_LENGTH, Prf, Hash, Time };
 use generator::Generator;
 use pool::Pool;
 
@@ -18,6 +18,7 @@ pub const MIN_POOL_SIZE: usize = 64;
 pub const MAX_GENERATE_SIZE: usize = 1 << 20;
 
 
+#[derive(Debug)]
 pub enum Error {
     NotSeededYet
 }
@@ -31,7 +32,7 @@ pub struct Fortuna<P: Prf, H: Hash, T: Time> {
     pool: [Pool<H>; POOLS_NUM],
     generator: Generator<P, H>,
     reseed_cnt: u32,
-    last_reseed_time: u32,
+    last_reseed_time: u64,
     clock: T
 }
 
@@ -44,7 +45,7 @@ impl<P, H, T> Fortuna<P, H, T>
     /// the generator and the accumulator, but the functions we are about to define
     /// are part of the external interface of Fortuna. Their names reflect the fact that
     /// they operate on the whole prng.
-    pub fn init(clock: T) -> Self {
+    pub fn new(clock: T) -> Self {
         macro_rules! array {
             ( $val:expr ; x8  ) => {
                 [$val, $val, $val, $val, $val, $val, $val, $val]
@@ -98,10 +99,10 @@ impl<P, H, T> Fortuna<P, H, T>
                     .enumerate()
                     .take_while(|&(i, _)| reseed_cnt % (1 << i) == 0)
                     .for_each(|(_, pool)| {
-                        let mut seed = [0; BLOCK_LENGTH];
+                        let mut seed = [0; KEY_LENGTH];
                         pool.output(&mut seed);
-                        hasher.update(&seed);
                         pool.reset();
+                        hasher.update(&seed);
                     })
             });
         }

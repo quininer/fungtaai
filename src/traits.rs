@@ -9,7 +9,7 @@ pub trait Prf {
     // const BLOCK_LENGTH: usize;
 
     fn new(key: &[u8; KEY_LENGTH]) -> Self;
-    fn prf(&self, data: &mut [u8]);
+    fn prf(&self, data: &mut [u8; BLOCK_LENGTH]);
 }
 
 pub trait Hash: Default {
@@ -18,5 +18,6 @@ pub trait Hash: Default {
 }
 
 pub trait Time {
-    fn now(&self) -> u32;
+    /// Must be milliseconds time accuracy
+    fn now(&self) -> u64;
 }

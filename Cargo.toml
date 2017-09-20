@@ -5,3 +5,8 @@ authors = ["quininer <quininer@live.com>"]
 
 [dependencies]
 byteorder = { version = "*", default-features = false, features = [ "i128" ] }
+
+[dev-dependencies]
+aesni = "*"
+sha2 = "*"
+digest = "*"
