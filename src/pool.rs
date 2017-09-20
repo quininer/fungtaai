@@ -22,5 +22,6 @@ impl<H: Hash> Pool<H> {
     #[inline]
     pub fn reset(&mut self) {
         self.hasher = H::default();
+        self.length = 0;
     }
 }

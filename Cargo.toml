@@ -1,6 +1,6 @@
 [package]
 name = "fungtaai"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["quininer <quininer@live.com>"]
 description = "Fortuna PRNG implementation in Rust"
 repository = "https://github.com/quininer/sp800-185"
