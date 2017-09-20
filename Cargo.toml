@@ -8,6 +8,10 @@ keywords = [ "random", "PRNG", "cryptography" ]
 categories = [ "cryptography", "no-std" ]
 license = "MIT"
 
+[badges]
+travis-ci = { repository = "quininer/fungtaai" }
+appveyor = { repository = "quininer/fungtaai" }
+
 [dependencies]
 byteorder = { version = "1", default-features = false, features = [ "i128" ] }
 
