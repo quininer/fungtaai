@@ -18,6 +18,7 @@ pub const MIN_POOL_SIZE: usize = 64;
 pub const MAX_GENERATE_SIZE: usize = 1 << 20;
 
 
+#[must_use]
 #[derive(Debug)]
 pub enum Error {
     NotSeededYet

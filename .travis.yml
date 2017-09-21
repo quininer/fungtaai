@@ -4,7 +4,6 @@ rust:
 cache: cargo
 os:
     - linux
-    - osx
 
 script:
     - cargo test --all-features

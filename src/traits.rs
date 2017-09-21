@@ -13,6 +13,7 @@ pub trait Prf {
 }
 
 pub trait Hash: Default {
+    // NOTE RESULT_LENGTH == KEY_LENGTH
     // const RESULT_LENGTH: usize;
 
     fn update(&mut self, input: &[u8]);
@@ -20,6 +21,6 @@ pub trait Hash: Default {
 }
 
 pub trait Time {
-    /// Must be milliseconds time accuracy
+    /// must be milliseconds time accuracy
     fn now(&self) -> u64;
 }
