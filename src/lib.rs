@@ -2,6 +2,7 @@
 
 #![feature(i128_type, iterator_for_each)]
 
+#[macro_use] extern crate static_assertions;
 extern crate byteorder;
 
 pub mod traits;
@@ -20,9 +21,7 @@ pub const MAX_GENERATE_SIZE: usize = 1 << 20;
 
 #[must_use]
 #[derive(Debug)]
-pub enum Error {
-    NotSeededYet
-}
+pub struct NotYetSeeded;
 
 /// 9.5 Accumulator
 ///
@@ -84,7 +83,7 @@ impl<P, H, T> Fortuna<P, H, T>
     ///
     /// This is not quite a simple wrapper around the generator component of the
     /// prng, because we have to handle the reseeds here.
-    pub fn random_data(&mut self, r: &mut [u8]) -> Result<(), Error> {
+    pub fn random_data(&mut self, r: &mut [u8]) -> Result<(), NotYetSeeded> {
         let now = self.clock.now();
         if self.pool[0].length >= MIN_POOL_SIZE && now > self.last_reseed_time + 100 {
             // We need to reseed.
@@ -110,7 +109,7 @@ impl<P, H, T> Fortuna<P, H, T>
 
         if self.reseed_cnt == 0 {
             // Generate error, prng not seeded yet
-            Err(Error::NotSeededYet)
+            Err(NotYetSeeded)
         } else {
             // Reseeds (if needed) are done. Let the generator that is part of R do the work.
             r.chunks_mut(MAX_GENERATE_SIZE)

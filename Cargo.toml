@@ -14,6 +14,7 @@ appveyor = { repository = "quininer/fungtaai" }
 
 [dependencies]
 byteorder = { version = "1", default-features = false, features = [ "i128" ] }
+static_assertions = "0.2"
 
 [dev-dependencies]
 aesni = "0.1"

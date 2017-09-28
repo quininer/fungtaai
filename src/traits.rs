@@ -1,5 +1,6 @@
 pub const KEY_LENGTH: usize = 32;
 pub const BLOCK_LENGTH: usize = 16;
+pub const RESULT_LENGTH: usize = KEY_LENGTH;
 
 pub trait Prf {
     // TODO
@@ -17,7 +18,7 @@ pub trait Hash: Default {
     // const RESULT_LENGTH: usize;
 
     fn update(&mut self, input: &[u8]);
-    fn result(&mut self, output: &mut [u8; KEY_LENGTH]);
+    fn result(&mut self, output: &mut [u8; RESULT_LENGTH]);
 }
 
 pub trait Time {

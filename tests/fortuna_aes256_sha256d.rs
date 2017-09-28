@@ -8,7 +8,7 @@ use std::thread;
 use aesni::Aes256;
 use sha2::Sha256;
 use fungtaai::Fortuna;
-use fungtaai::traits::{ KEY_LENGTH, BLOCK_LENGTH, Prf, Hash, Time };
+use fungtaai::traits::{ KEY_LENGTH, RESULT_LENGTH, BLOCK_LENGTH, Prf, Hash, Time };
 
 
 struct SysTime;
@@ -42,7 +42,7 @@ impl Hash for Sha256d {
         self.0.process(input);
     }
 
-    fn result(&mut self, output: &mut [u8; KEY_LENGTH]) {
+    fn result(&mut self, output: &mut [u8; RESULT_LENGTH]) {
         use digest::{ Input, FixedOutput };
 
         let mut sha256d = Sha256::default();

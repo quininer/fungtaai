@@ -1,6 +1,6 @@
 use core::marker::PhantomData;
 use byteorder::{ ByteOrder, LittleEndian };
-use ::traits::{ KEY_LENGTH, BLOCK_LENGTH, Prf, Hash };
+use ::traits::{ KEY_LENGTH, BLOCK_LENGTH, RESULT_LENGTH, Prf, Hash };
 use ::MAX_GENERATE_SIZE;
 
 
@@ -24,6 +24,8 @@ impl<P, H> Default for Generator<P, H>
     /// This is rather simple. We set the key and the counter to zero to indicate that
     /// the generator has not been seeded yet.
     fn default() -> Self {
+        const_assert_eq!(KEY_LENGTH, RESULT_LENGTH);
+
         // Package up the state.
         Generator {
             // Set the key K and counter C to zero.
@@ -51,7 +53,7 @@ impl<P, H> Generator<P, H>
         hasher.result(&mut self.key);
 
         // Increment the counter to make it nonzero and mark the generator as seeded.
-        self.ctr += 1;
+        self.ctr = self.ctr.wrapping_add(1);
     }
 
     /// 9.4.3 Generate Blocks
@@ -59,21 +61,18 @@ impl<P, H> Generator<P, H>
     /// This function generates a number of blocks of random output. This is an
     /// internal function used only by the generator. Any entity outside the prng
     /// should not be able to call this function.
-    pub fn generate_blocks(&mut self, r: &mut [u8]) {
-        assert_ne!(self.ctr, 0);
-
-        let prf = P::new(&self.key);
+    fn generate_blocks(ctr: &mut u128, prf: &P, r: &mut [u8]) {
+        let mut part = [0; BLOCK_LENGTH];
 
         // Append the necessary blocks.
         for chunk in r.chunks_mut(BLOCK_LENGTH) {
-            let mut part = [0; BLOCK_LENGTH];
-            LittleEndian::write_u128(&mut part, self.ctr);
+            LittleEndian::write_u128(&mut part, *ctr);
             prf.prf(&mut part);
 
             // TODO https://github.com/rust-lang/rust/issues/44100
             let len = chunk.len();
             chunk.copy_from_slice(&part[..len]);
-            self.ctr += 1;
+            *ctr = ctr.wrapping_add(1);
         }
     }
 
@@ -86,12 +85,14 @@ impl<P, H> Generator<P, H>
         // Limit the output length to reduce the statistical deviation from perfectly random
         // outputs. Also ensure that the length is not negative.
         assert!(r.len() <= MAX_GENERATE_SIZE);
+        assert_ne!(self.ctr, 0);
+
+        let prf = P::new(&self.key);
 
         // Compute the output.
-        self.generate_blocks(r);
+        Self::generate_blocks(&mut self.ctr, &prf, r);
+
         // Switch to a new key to avoid later compromises of this output.
-        let mut newkey = [0; KEY_LENGTH];
-        self.generate_blocks(&mut newkey);
-        self.key = newkey;
+        Self::generate_blocks(&mut self.ctr, &prf, &mut self.key);
     }
 }
