@@ -21,7 +21,9 @@ pub trait Hash: Default {
     fn result(&mut self, output: &mut [u8; RESULT_LENGTH]);
 }
 
-pub trait Time {
+pub trait Timer {
     /// must be milliseconds time accuracy
-    fn now(&self) -> u64;
+    fn elapsed_ms(&self) -> u64;
+
+    fn reset(&mut self);
 }

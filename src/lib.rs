@@ -9,7 +9,7 @@ pub mod traits;
 mod generator;
 mod pool;
 
-use traits::{ KEY_LENGTH, Prf, Hash, Time };
+use traits::{ KEY_LENGTH, Prf, Hash, Timer };
 use generator::Generator;
 use pool::Pool;
 
@@ -27,17 +27,16 @@ pub struct NotYetSeeded;
 ///
 /// The accumulator collects real random data from various sources and uses it to
 /// reseed the generator.
-pub struct Fortuna<P: Prf, H: Hash, T: Time> {
+pub struct Fortuna<P: Prf, H: Hash, T: Timer> {
     // TODO https://github.com/rust-lang/rust/issues/44580
     pool: [Pool<H>; POOLS_NUM],
     generator: Generator<P, H>,
     reseed_cnt: u32,
-    last_reseed_time: u64,
-    clock: T
+    timer: T
 }
 
 impl<P, H, T> Fortuna<P, H, T>
-    where P: Prf, H: Hash, T: Time
+    where P: Prf, H: Hash, T: Timer
 {
     /// 9.5.4 Initialization
     ///
@@ -45,7 +44,7 @@ impl<P, H, T> Fortuna<P, H, T>
     /// the generator and the accumulator, but the functions we are about to define
     /// are part of the external interface of Fortuna. Their names reflect the fact that
     /// they operate on the whole prng.
-    pub fn new(clock: T) -> Self {
+    pub fn new(timer: T) -> Self {
         macro_rules! array {
             ( $val:expr ; x8  ) => {
                 [$val, $val, $val, $val, $val, $val, $val, $val]
@@ -74,8 +73,7 @@ impl<P, H, T> Fortuna<P, H, T>
             generator: Generator::default(),
             // Set the reseed counter to zero.
             reseed_cnt: 0,
-            last_reseed_time: 0,
-            clock: clock
+            timer: timer
         }
     }
 
@@ -84,11 +82,10 @@ impl<P, H, T> Fortuna<P, H, T>
     /// This is not quite a simple wrapper around the generator component of the
     /// prng, because we have to handle the reseeds here.
     pub fn random_data(&mut self, r: &mut [u8]) -> Result<(), NotYetSeeded> {
-        let now = self.clock.now();
-        if self.pool[0].length >= MIN_POOL_SIZE && now > self.last_reseed_time + 100 {
+        if self.pool[0].length >= MIN_POOL_SIZE && (self.reseed_cnt == 0 || self.timer.elapsed_ms() > 100) {
             // We need to reseed.
-            self.reseed_cnt += 1;
-            self.last_reseed_time = now;
+            self.reseed_cnt = self.reseed_cnt.wrapping_add(1);
+            self.timer.reset();
 
             // Got the data, now do the reseed.
             let pools = &mut self.pool;

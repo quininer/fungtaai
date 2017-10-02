@@ -3,20 +3,24 @@ extern crate sha2;
 extern crate digest;
 extern crate fungtaai;
 
-use std::time::{ UNIX_EPOCH, SystemTime, Duration };
+use std::time::{ Instant, Duration };
 use std::thread;
 use aesni::Aes256;
 use sha2::Sha256;
 use fungtaai::Fortuna;
-use fungtaai::traits::{ KEY_LENGTH, RESULT_LENGTH, BLOCK_LENGTH, Prf, Hash, Time };
+use fungtaai::traits::{ KEY_LENGTH, RESULT_LENGTH, BLOCK_LENGTH, Prf, Hash, Timer };
 
 
-struct SysTime;
+struct InstantTimer(Instant);
 
-impl Time for SysTime {
-    fn now(&self) -> u64 {
-        let dur = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+impl Timer for InstantTimer {
+    fn elapsed_ms(&self) -> u64 {
+        let dur = self.0.elapsed();
         dur.as_secs() * 1000 + u64::from(dur.subsec_nanos()) / 1_000_000
+    }
+
+    fn reset(&mut self) {
+        self.0 = Instant::now();
     }
 }
 
@@ -56,7 +60,7 @@ impl Hash for Sha256d {
 fn test_vector() {
     // from https://github.com/DaGenix/rust-crypto/blob/master/src/fortuna.rs#L397
 
-    let mut fungtaai: Fortuna<Aes256Prf, Sha256d, _> = Fortuna::new(SysTime);
+    let mut fungtaai: Fortuna<Aes256Prf, Sha256d, _> = Fortuna::new(InstantTimer(Instant::now()));
 
     let mut output = [0; 100];
     // Expected output from experiments with pycryto
