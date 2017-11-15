@@ -5,13 +5,13 @@ extern crate fungtaai;
 
 use std::time::{ Instant, Duration };
 use std::thread;
-use aesni::Aes256;
+use aesni::{ check_aesni, Aes256 };
 use sha2::Sha256;
 use fungtaai::Fortuna;
 use fungtaai::traits::{ KEY_LENGTH, RESULT_LENGTH, BLOCK_LENGTH, Prf, Hash, Timer };
 
 
-struct InstantTimer(Instant);
+struct InstantTimer(pub Instant);
 
 impl Timer for InstantTimer {
     fn elapsed_ms(&self) -> u64 {
@@ -28,7 +28,11 @@ struct Aes256Prf(Aes256);
 
 impl Prf for Aes256Prf {
     fn new(key: &[u8; KEY_LENGTH]) -> Self {
-        Aes256Prf(Aes256::new(key))
+        if check_aesni() {
+            Aes256Prf(Aes256::new(key))
+        } else {
+            panic!("no aesni")
+        }
     }
 
     fn prf(&self, data: &mut [u8; BLOCK_LENGTH]) {
@@ -46,7 +50,7 @@ impl Hash for Sha256d {
         self.0.process(input);
     }
 
-    fn result(&mut self, output: &mut [u8; RESULT_LENGTH]) {
+    fn result(self, output: &mut [u8; RESULT_LENGTH]) {
         use digest::{ Input, FixedOutput };
 
         let mut sha256d = Sha256::default();

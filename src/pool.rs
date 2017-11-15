@@ -15,13 +15,7 @@ impl<H: Hash> Pool<H> {
     }
 
     #[inline]
-    pub fn output(&mut self, output: &mut [u8; KEY_LENGTH]) {
+    pub fn output(self, output: &mut [u8; KEY_LENGTH]) {
         self.hasher.result(output);
-    }
-
-    #[inline]
-    pub fn reset(&mut self) {
-        self.hasher = H::default();
-        self.length = 0;
     }
 }

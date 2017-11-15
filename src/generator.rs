@@ -62,10 +62,9 @@ impl<P, H> Generator<P, H>
     /// internal function used only by the generator. Any entity outside the prng
     /// should not be able to call this function.
     fn generate_blocks(ctr: &mut u128, prf: &P, r: &mut [u8]) {
-        let mut part = [0; BLOCK_LENGTH];
-
         // Append the necessary blocks.
         for chunk in r.chunks_mut(BLOCK_LENGTH) {
+            let mut part = [0; BLOCK_LENGTH];
             LittleEndian::write_u128(&mut part, *ctr);
             prf.prf(&mut part);
 

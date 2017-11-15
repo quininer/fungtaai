@@ -18,5 +18,5 @@ static_assertions = "0.2"
 
 [dev-dependencies]
 aesni = "0.1"
-sha2 = "0.6"
-digest = "0.6"
+sha2 = "0.7"
+digest = "0.7"

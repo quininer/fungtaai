@@ -4,7 +4,6 @@ pub const RESULT_LENGTH: usize = KEY_LENGTH;
 
 pub trait Prf {
     // TODO
-    //  https://github.com/rust-lang/rust/issues/44247
     //  https://github.com/rust-lang/rust/issues/44168
     // const KEY_LENGTH: usize;
     // const BLOCK_LENGTH: usize;
@@ -18,7 +17,7 @@ pub trait Hash: Default {
     // const RESULT_LENGTH: usize;
 
     fn update(&mut self, input: &[u8]);
-    fn result(&mut self, output: &mut [u8; RESULT_LENGTH]);
+    fn result(self, output: &mut [u8; RESULT_LENGTH]);
 }
 
 pub trait Timer {

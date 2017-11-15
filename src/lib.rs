@@ -1,6 +1,6 @@
 #![no_std]
 
-#![feature(i128_type, iterator_for_each)]
+#![feature(i128_type)]
 
 #[macro_use] extern crate static_assertions;
 extern crate byteorder;
@@ -9,6 +9,7 @@ pub mod traits;
 mod generator;
 mod pool;
 
+use core::mem;
 use traits::{ KEY_LENGTH, Prf, Hash, Timer };
 use generator::Generator;
 use pool::Pool;
@@ -90,18 +91,18 @@ impl<P, H, T> Fortuna<P, H, T>
             // Got the data, now do the reseed.
             let pools = &mut self.pool;
             let reseed_cnt = self.reseed_cnt;
-            self.generator.reseed_with(|hasher| {
+            self.generator.reseed_with(|hasher|
                 // Append the hashes of all the pools we will use
                 pools.iter_mut()
                     .enumerate()
                     .take_while(|&(i, _)| reseed_cnt % (1 << i) == 0)
                     .for_each(|(_, pool)| {
                         let mut seed = [0; KEY_LENGTH];
-                        pool.output(&mut seed);
-                        pool.reset();
+                        mem::replace(pool, Default::default())
+                            .output(&mut seed);
                         hasher.update(&seed);
                     })
-            });
+            );
         }
 
         if self.reseed_cnt == 0 {
