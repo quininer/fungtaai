@@ -105,14 +105,14 @@ impl<P, H, T> Fortuna<P, H, T>
             );
         }
 
-        if self.reseed_cnt == 0 {
-            // Generate error, prng not seeded yet
-            Err(NotYetSeeded)
-        } else {
+        if self.reseed_cnt != 0 {
             // Reseeds (if needed) are done. Let the generator that is part of R do the work.
             r.chunks_mut(MAX_GENERATE_SIZE)
                 .for_each(|chunk| self.generator.pseudo_random_data(chunk));
             Ok(())
+        } else {
+            // Generate error, prng not seeded yet
+            Err(NotYetSeeded)
         }
     }
 
