@@ -12,6 +12,8 @@ license = "MIT"
 travis-ci = { repository = "quininer/fungtaai" }
 
 [dependencies]
+failure = { git = "https://github.com/withoutboats/failure", default-features = false }
+failure_derive = "*"
 byteorder = { version = "1", default-features = false, features = [ "i128" ] }
 static_assertions = "0.2"
 

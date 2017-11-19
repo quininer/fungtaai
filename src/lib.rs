@@ -3,12 +3,16 @@
 #![feature(i128_type)]
 
 #[macro_use] extern crate static_assertions;
+#[macro_use] extern crate failure_derive;
+extern crate failure;
 extern crate byteorder;
 
 pub mod traits;
 mod generator;
 mod pool;
 
+// XXX https://github.com/withoutboats/failure_derive/issues/2
+use core as std;
 use core::mem;
 use traits::{ KEY_LENGTH, Prf, Hash, Timer };
 use generator::Generator;
@@ -21,8 +25,9 @@ pub const MAX_GENERATE_SIZE: usize = 1 << 20;
 
 
 #[must_use]
-#[derive(Debug)]
-pub struct NotYetSeeded;
+#[derive(Debug, Fail)]
+#[fail(display = "not seeded yet!")]
+pub struct NotSeeded;
 
 /// 9.5 Accumulator
 ///
@@ -82,7 +87,7 @@ impl<P, H, T> Fortuna<P, H, T>
     ///
     /// This is not quite a simple wrapper around the generator component of the
     /// prng, because we have to handle the reseeds here.
-    pub fn random_data(&mut self, r: &mut [u8]) -> Result<(), NotYetSeeded> {
+    pub fn random_data(&mut self, r: &mut [u8]) -> Result<(), NotSeeded> {
         if self.pool[0].length >= MIN_POOL_SIZE && (self.reseed_cnt == 0 || self.timer.elapsed_ms() > 100) {
             // We need to reseed.
             self.reseed_cnt = self.reseed_cnt.wrapping_add(1);
@@ -112,7 +117,7 @@ impl<P, H, T> Fortuna<P, H, T>
             Ok(())
         } else {
             // Generate error, prng not seeded yet
-            Err(NotYetSeeded)
+            Err(NotSeeded)
         }
     }
 
