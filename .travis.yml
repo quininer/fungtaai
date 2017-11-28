@@ -6,4 +6,4 @@ os:
     - linux
 
 script:
-    - cargo test --all-features
+    - cargo test

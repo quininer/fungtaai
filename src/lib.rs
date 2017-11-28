@@ -1,6 +1,6 @@
 #![no_std]
 
-#![feature(i128_type)]
+#![feature(i128_type, nll)]
 
 #[macro_use] extern crate static_assertions;
 #[macro_use] extern crate failure_derive;
@@ -11,8 +11,6 @@ pub mod traits;
 mod generator;
 mod pool;
 
-// XXX https://github.com/withoutboats/failure_derive/issues/2
-use core as std;
 use core::mem;
 use traits::{ KEY_LENGTH, Prf, Hash, Timer };
 use generator::Generator;
@@ -52,15 +50,6 @@ impl<P, H, T> Fortuna<P, H, T>
     /// they operate on the whole prng.
     pub fn new(timer: T) -> Self {
         macro_rules! array {
-            ( $val:expr ; x8  ) => {
-                [$val, $val, $val, $val, $val, $val, $val, $val]
-            };
-            ( $val:expr ; x16 ) => {
-                [
-                    $val, $val, $val, $val, $val, $val, $val, $val,
-                    $val, $val, $val, $val, $val, $val, $val, $val
-                ]
-            };
             ( $val:expr ; x32 ) => {
                 [
                     $val, $val, $val, $val, $val, $val, $val, $val,
@@ -68,7 +57,7 @@ impl<P, H, T> Fortuna<P, H, T>
                     $val, $val, $val, $val, $val, $val, $val, $val,
                     $val, $val, $val, $val, $val, $val, $val, $val
                 ]
-            }
+            };
         }
 
         // Package up the state.

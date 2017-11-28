@@ -68,9 +68,7 @@ impl<P, H> Generator<P, H>
             LittleEndian::write_u128(&mut part, *ctr);
             prf.prf(&mut part);
 
-            // TODO https://github.com/rust-lang/rust/issues/44100
-            let len = chunk.len();
-            chunk.copy_from_slice(&part[..len]);
+            chunk.copy_from_slice(&part[..chunk.len()]);
             *ctr = ctr.wrapping_add(1);
         }
     }

@@ -29,7 +29,7 @@ struct Aes256Prf(Aes256);
 impl Prf for Aes256Prf {
     fn new(key: &[u8; KEY_LENGTH]) -> Self {
         if check_aesni() {
-            Aes256Prf(Aes256::new(key))
+            Aes256Prf(Aes256::init(key))
         } else {
             panic!("no aesni")
         }
