@@ -5,7 +5,8 @@ extern crate fungtaai;
 
 use std::time::{ Instant, Duration };
 use std::thread;
-use aesni::{ check_aesni, Aes256 };
+use aesni::{ BlockCipher, Aes256 };
+use aesni::block_cipher_trait::generic_array::GenericArray;
 use sha2::Sha256;
 use fungtaai::Fortuna;
 use fungtaai::traits::{ KEY_LENGTH, RESULT_LENGTH, BLOCK_LENGTH, Prf, Hash, Timer };
@@ -14,9 +15,8 @@ use fungtaai::traits::{ KEY_LENGTH, RESULT_LENGTH, BLOCK_LENGTH, Prf, Hash, Time
 struct InstantTimer(pub Instant);
 
 impl Timer for InstantTimer {
-    fn elapsed_ms(&self) -> u64 {
-        let dur = self.0.elapsed();
-        dur.as_secs() * 1000 + u64::from(dur.subsec_nanos()) / 1_000_000
+    fn elapsed(&self) -> Duration {
+        self.0.elapsed()
     }
 
     fn reset(&mut self) {
@@ -28,15 +28,11 @@ struct Aes256Prf(Aes256);
 
 impl Prf for Aes256Prf {
     fn new(key: &[u8; KEY_LENGTH]) -> Self {
-        if check_aesni() {
-            Aes256Prf(Aes256::init(key))
-        } else {
-            panic!("no aesni")
-        }
+        Aes256Prf(Aes256::new(GenericArray::from_slice(key)))
     }
 
     fn prf(&self, data: &mut [u8; BLOCK_LENGTH]) {
-        self.0.encrypt(data);
+        self.0.encrypt_block(GenericArray::from_mut_slice(data));
     }
 }
 

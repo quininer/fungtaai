@@ -18,6 +18,6 @@ byteorder = { version = "1", default-features = false, features = [ "i128" ] }
 static_assertions = "0.2"
 
 [dev-dependencies]
-aesni = "0.2"
+aesni = "0.3"
 sha2 = "0.7"
 digest = "0.7"

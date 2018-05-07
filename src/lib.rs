@@ -1,6 +1,6 @@
 #![no_std]
 
-#![feature(i128_type, nll)]
+#![feature(nll)]
 
 #[macro_use] extern crate static_assertions;
 #[macro_use] extern crate failure_derive;
@@ -12,6 +12,7 @@ mod generator;
 mod pool;
 
 use core::mem;
+use core::time::Duration;
 use traits::{ KEY_LENGTH, Prf, Hash, Timer };
 use generator::Generator;
 use pool::Pool;
@@ -68,7 +69,7 @@ impl<P, H, T> Fortuna<P, H, T>
             generator: Generator::default(),
             // Set the reseed counter to zero.
             reseed_cnt: 0,
-            timer: timer
+            timer
         }
     }
 
@@ -77,7 +78,9 @@ impl<P, H, T> Fortuna<P, H, T>
     /// This is not quite a simple wrapper around the generator component of the
     /// prng, because we have to handle the reseeds here.
     pub fn random_data(&mut self, r: &mut [u8]) -> Result<(), NotSeeded> {
-        if self.pool[0].length >= MIN_POOL_SIZE && (self.reseed_cnt == 0 || self.timer.elapsed_ms() > 100) {
+        const INTERVAL: Duration = Duration::from_millis(100);
+
+        if self.pool[0].length >= MIN_POOL_SIZE && (self.reseed_cnt == 0 || self.timer.elapsed() > INTERVAL) {
             // We need to reseed.
             self.reseed_cnt = self.reseed_cnt.wrapping_add(1);
             self.timer.reset();

@@ -1,3 +1,5 @@
+use core::time::Duration;
+
 pub const KEY_LENGTH: usize = 32;
 pub const BLOCK_LENGTH: usize = 16;
 pub const RESULT_LENGTH: usize = KEY_LENGTH;
@@ -22,7 +24,7 @@ pub trait Hash: Default {
 
 pub trait Timer {
     /// must be milliseconds time accuracy
-    fn elapsed_ms(&self) -> u64;
+    fn elapsed(&self) -> Duration;
 
     fn reset(&mut self);
 }

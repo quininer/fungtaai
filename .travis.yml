@@ -6,4 +6,4 @@ os:
     - linux
 
 script:
-    - cargo test
+    - env RUSTFLAGS="-C target-cpu=native" cargo test
